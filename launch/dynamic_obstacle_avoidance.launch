@@ -1,0 +1,7 @@
+<launch>
+  <!-- Carrega os parâmetros do arquivo YAML -->
+  <rosparam file="$(find dynamic_obstacle_avoidance)/config/parameters.yaml" command="load" />
+
+  <!-- Executa o nó Python -->
+  <node name="dynamic_obstacle_avoidance_node" pkg="dynamic_obstacle_avoidance" type="run_controller.py" output="screen"/>
+</launch>
