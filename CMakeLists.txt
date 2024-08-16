@@ -8,7 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   gazebo_msgs
-  message_generation  # Needed for custom message generation
+  message_generation  
+  rostest
 )
 
 
@@ -47,6 +48,7 @@ install(PROGRAMS
   src/forceCalculationApfModified.py
   src/migbotAvoidance.py
   scripts/scenario_controller.py
+  test/test_scenario_controller.py
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
@@ -60,3 +62,11 @@ install(DIRECTORY launch/
 install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
 )
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+endif()
+
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_nosetests(test/test_scenario_controller.py)
+endif()
