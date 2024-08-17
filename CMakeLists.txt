@@ -42,12 +42,8 @@ include_directories(
 
 ## Install Python scripts
 install(PROGRAMS
-  src/obstacle_avoidance.py
-  src/migbot_controller.py
-  src/run_controller.py
-  src/forceCalculationApfModified.py
-  src/migbotAvoidance.py
   scripts/scenario_controller.py
+  scripts/apfm_obstacle_avoidance.py
   test/test_scenario_controller.py
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
