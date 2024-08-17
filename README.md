@@ -24,7 +24,7 @@ robot_domain_radius: 0.5
 safe_distance: 1.0
 obstacle_influence_range: 5
 distance_to_goal: 0.1
-
+```
 # Topics
 ## Input Topics
 
