@@ -9,8 +9,9 @@ class APFMAvoidance:
     def __init__(self):
         rospy.init_node('apfm_avoidance')
 
+        # Initialize the ObstacleAvoidance object
         self.obstacle_avoidance = ObstacleAvoidance()
-        
+
         # Publishers for the forces
         self.repulsive_force_pub = rospy.Publisher('/apfm/repulsive_force', Vector3, queue_size=10)
         self.attractive_force_pub = rospy.Publisher('/apfm/attractive_force', Vector3, queue_size=10)

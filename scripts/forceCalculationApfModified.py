@@ -5,19 +5,24 @@ import math
 import rospy
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from dynamic_obstacle_avoidance.msg import CustomInfo  
 
 class ObstacleAvoidance:
+
     def __init__(self):
-        # Inicializando os parâmetros com valores padrão
-        self.attraction_scaling_factor = 6000
-        self.obstacle_scaling_factor_dynamic = 20000
-        self.obstacle_scaling_factor_static = 3000000
-        self.scaling_factor_emergency = 40000
-        self.safety_margin_radius = 0.3
-        self.robot_domain_radius = 0.5  # Valor padrão, você pode ajustar
-        self.safe_distance = 1.0  # Valor padrão, você pode ajustar
-        self.obstacle_influence_range = 5
-        self.distance_to_goal = 0.1
+        # Initialize parameters from ROS
+        self.attraction_scaling_factor = rospy.get_param('~attraction_scaling_factor', 6000)
+        self.obstacle_scaling_factor_dynamic = rospy.get_param('~obstacle_scaling_factor_dynamic', 20000)
+        self.obstacle_scaling_factor_static = rospy.get_param('~obstacle_scaling_factor_static', 3000000)
+        self.scaling_factor_emergency = rospy.get_param('~scaling_factor_emergency', 40000)
+        self.safety_margin_radius = rospy.get_param('~safety_margin_radius', 0.3)
+        self.robot_domain_radius = rospy.get_param('~robot_domain_radius', 0.5)
+        self.safe_distance = rospy.get_param('~safe_distance', 1.0)
+        self.obstacle_influence_range = rospy.get_param('~obstacle_influence_range', 5)
+        self.distance_to_goal = rospy.get_param('~distance_to_goal', 0.1)
+
+        self.custom_info_pub = rospy.Publisher('/obstacle_avoidance/custom_info', CustomInfo, queue_size=10)
+    
 
 
     def set_parameters(self, **kwargs):
@@ -93,17 +98,6 @@ class ObstacleAvoidance:
         return Frd
 
     def iniciation(self,obstacle_position, current_robot_position, current_robot_velocity, obstacle_velocitiy, obstacle_radii, safe_distance, obstacle_influence_range, robot_domain_radius,normalized_vector_to_goal,numero_do_obstaculo):
-        # Printando o tipo das variáveis no terminal
-        print("Tipo de obstacle_position:", type(obstacle_position))
-        print("Tipo de current_robot_position:", type(current_robot_position))
-        print("Tipo de current_robot_velocity:", type(current_robot_velocity))
-        print("Tipo de obstacle_velocitiy:", type(obstacle_velocitiy))
-        print("Tipo de obstacle_radii:", type(obstacle_radii))
-        print("Tipo de safe_distance:", type(safe_distance))
-        print("Tipo de obstacle_influence_range:", type(obstacle_influence_range))
-        print("Tipo de robot_domain_radius:", type(robot_domain_radius))
-        print("Tipo de normalized_vector_to_goal:", type(normalized_vector_to_goal))
-        print("Tipo de numero_do_obstaculo:", type(numero_do_obstaculo))
         
         distance_to_obstacle = np.linalg.norm(obstacle_position - np.array(current_robot_position))
         center_to_center_safe_distance = robot_domain_radius + safe_distance + obstacle_radii #dm​=Ros​+dsafe​+Rts  [1]
@@ -229,7 +223,7 @@ class ObstacleAvoidance:
         # obstacle_scaling_factor_static -> Ns no artigo. Valor definido pelo projetista. Simulação = 3000000. Artigo = 300000
         # scaling_factor_emergency -> Ne no artigo. Valor definido pelo projetista. Simulação = 40000. Artigo = 2000
         # safety_margin_radius -> No artigo, chamado de tau, e na simulaçõa com valor de 0.3. área proibida. representa um pequeno raio de uma margem de segurança artificial para o robô (OS), garantindo que a superfície dos obstáculos tenha um potencial repulsivo suficientemente grande mas limitado
-        # rorospybot_domain_radius -> Raio do robô 
+        # robot_domain_radius -> Raio do robô 
         # safe_distance -> representa a distância segura permissível entre o robô e um obstáculo
         # obstacle_influence_range -> representa o alcance de influência do conjunto de obstáculos (TS) e pode variar com base de um operador/projetista para condições como visibilidade baixa ou águas abertas. (variar entre 3 a 5). Foi usado 5 na simulação
         # current_robot_velocity -> vetor de velocidade atual do robô em relação ao mundo.
@@ -252,26 +246,46 @@ class ObstacleAvoidance:
             Frd = np.zeros_like(current_robot_position)
             Fre = np.zeros_like(current_robot_position)
             Frs = np.zeros_like(current_robot_position)		
-            numero_do_obstaculo = i
+            numero_do_obstaculo = i+1 
 
             distance_to_obstacle, center_to_center_safe_distance, collision_avoidance_radius, vector_to_obstacle, angle_for_safe_distance, relative_speed_vector, angle_between_direction_and_velocity, unit_vector_to_obstacle, angle_difference_for_safety, perpendicular_unit_vector_to_obstacle, obstacle_domain_radius = self.iniciation(list_of_obstacle_positions[i], current_robot_position, current_robot_velocity, list_of_obstacle_velocities[i], list_of_obstacle_radii[i], self.safe_distance, self.obstacle_influence_range, self.robot_domain_radius,normalized_vector_to_goal,numero_do_obstaculo)
-        
+
+            # Criação da mensagem CustomInfo
+            custom_info_msg = CustomInfo()
+            custom_info_msg.distance_to_obstacle = distance_to_obstacle
+            custom_info_msg.center_to_center_safe_distance = center_to_center_safe_distance
+            custom_info_msg.collision_avoidance_radius = collision_avoidance_radius
+            custom_info_msg.vector_to_obstacle = vector_to_obstacle.tolist()
+            custom_info_msg.angle_for_safe_distance = angle_for_safe_distance
+            custom_info_msg.relative_speed_vector = relative_speed_vector.tolist()
+            custom_info_msg.angle_between_direction_and_velocity = angle_between_direction_and_velocity
+            custom_info_msg.unit_vector_to_obstacle = unit_vector_to_obstacle.tolist()
+            custom_info_msg.angle_difference_for_safety = angle_difference_for_safety
+            custom_info_msg.perpendicular_unit_vector_to_obstacle = perpendicular_unit_vector_to_obstacle.tolist()
+            custom_info_msg.obstacle_domain_radius = obstacle_domain_radius
+
+            # Publicação da mensagem em um tópico
+            self.custom_info_pub.publish(custom_info_msg)
+
             tolerance = 1e-10         
             if distance_to_obstacle <= collision_avoidance_radius and angle_between_direction_and_velocity < angle_for_safe_distance and center_to_center_safe_distance < distance_to_obstacle:
                 if np.linalg.norm(list_of_obstacle_velocities[i]) > tolerance:
+                    rospy.loginfo("Dinamico: ")
                     Frd = self.calculate_Frd(distance_to_obstacle,center_to_center_safe_distance,self.obstacle_influence_range,angle_between_direction_and_velocity,relative_speed_vector,angle_for_safe_distance,angle_difference_for_safety,vector_to_obstacle,self.obstacle_scaling_factor_dynamic,obstacle_domain_radius,distance_to_goal,unit_vector_to_obstacle,perpendicular_unit_vector_to_obstacle,normalized_vector_to_goal)
                 else:
+                    rospy.loginfo("Estatico: ")
                     Frs = self.calculate_Frs(distance_to_obstacle, self.safety_margin_radius, distance_to_goal, self.obstacle_influence_range, self.obstacle_scaling_factor_static, obstacle_domain_radius, unit_vector_to_obstacle, normalized_vector_to_goal)
             else:
                 if distance_to_obstacle < center_to_center_safe_distance :
+                    rospy.loginfo("Emergencia: ")
                     Fre = self.calculate_Fre(distance_to_obstacle, self.safety_margin_radius, center_to_center_safe_distance, distance_to_goal, self.scaling_factor_emergency, obstacle_domain_radius, unit_vector_to_obstacle, relative_speed_vector, angle_between_direction_and_velocity, normalized_vector_to_goal,perpendicular_unit_vector_to_obstacle)
                 else:
                     None
-            rospy.loginfo(f"Obstaculo numero {i}")
+            rospy.loginfo(f"Obstaculo numero {i+1}")
             rospy.loginfo(f"Frd = {Frd}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," dinamic --------------  Frd = ",Frd)
             rospy.loginfo(f"Frs = {Frs}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," static --------------  Frs = ",Frs)
             rospy.loginfo(f"Fre = {Fre}")#print("distance_to_obstacle =",distance_to_obstacle,"< center_to_center_safe_distance =", center_to_center_safe_distance," --------------  Fre = ",Fre)
-                
+               
             Frd_total += Frd
             Fre_total += Fre
             Frs_total += Frs

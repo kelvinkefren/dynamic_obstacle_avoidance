@@ -1,5 +1,5 @@
 <launch>
-  <test test-name="test_scenario_controller" pkg="dynamic_obstacle_avoidance" type="test_scenario_controller.py" time-limit="60" />
+  <test test-name="test__controller" pkg="dynamic_obstacle_avoidance" type="test_scenario_controller.py" time-limit="60" />
   <param name="scenario" value="1" />
   <param name="goal_x" value="5.0" />
   <param name="goal_y" value="7.5" />
