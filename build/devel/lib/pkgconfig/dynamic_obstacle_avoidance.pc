@@ -1,0 +1,8 @@
+prefix=/home/kelvin/master_ws_newer/src/dynamic_obstacle_avoidance/build/devel
+
+Name: dynamic_obstacle_avoidance
+Description: Description of dynamic_obstacle_avoidance
+Version: 0.0.1
+Cflags: -I/home/kelvin/master_ws_newer/src/dynamic_obstacle_avoidance/build/devel/include
+Libs: -L${prefix}/lib 
+Requires: message_runtime rospy std_msgs geometry_msgs

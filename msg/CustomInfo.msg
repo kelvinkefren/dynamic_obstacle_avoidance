@@ -1,0 +1,12 @@
+float64 distance_to_obstacle
+float64 center_to_center_safe_distance
+float64 collision_avoidance_radius
+float64[] vector_to_obstacle
+float64 angle_for_safe_distance
+float64[] relative_speed_vector
+float64 angle_between_direction_and_velocity
+float64[] unit_vector_to_obstacle
+float64 angle_difference_for_safety
+float64[] perpendicular_unit_vector_to_obstacle
+float64 obstacle_domain_radius
+

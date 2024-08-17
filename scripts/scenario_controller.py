@@ -38,7 +38,7 @@ class ScenarioController:
         if self.scenario == 1:
             predefined_robot = RobotState(
                 position=Point(x=10, y=10, z=0),
-                velocity=Vector3(x=0, y=0, z=0),
+                velocity=Vector3(x=0.1, y=0.1, z=0),
                 radius=1.0
             )
             self.robot_pub.publish(predefined_robot)
@@ -53,8 +53,9 @@ class ScenarioController:
     def publish_obstacle_state(self, event):
         if self.scenario == 1:
             predefined_obstacles = ObstacleArray(obstacles=[
-                ObstacleState(position=Point(x=30, y=30, z=0), velocity=Vector3(x=0, y=0, z=0), radius=2.0),
-                ObstacleState(position=Point(x=40, y=40, z=0), velocity=Vector3(x=0, y=0, z=0), radius=1.5)
+                ObstacleState(position=Point(x=15, y=15, z=0), velocity=Vector3(x=0, y=0, z=0), radius=2.0),
+                # ObstacleState(position=Point(x=13, y=13, z=0), velocity=Vector3(x=-1, y=-1, z=0), radius=1.5),
+                # ObstacleState(position=Point(x=11, y=11, z=0), velocity=Vector3(x=0, y=0, z=0), radius=1.5)
             ])
             self.obstacle_pub.publish(predefined_obstacles)
         elif self.scenario == 2:
