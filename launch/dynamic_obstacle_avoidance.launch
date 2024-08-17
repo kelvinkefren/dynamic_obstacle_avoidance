@@ -1,7 +1,18 @@
 <launch>
-  <!-- Carrega os parâmetros do arquivo YAML -->
-  <rosparam file="$(find dynamic_obstacle_avoidance)/config/parameters.yaml" command="load" />
+    <!-- Carrega os parâmetros do arquivo YAML -->
+    <rosparam file="$(find dynamic_obstacle_avoidance)/config/parameters.yaml" command="load" />
 
-  <!-- Executa o nó Python -->
-  <node name="dynamic_obstacle_avoidance_node" pkg="dynamic_obstacle_avoidance" type="run_controller.py" output="screen"/>
+    <!-- Lança o nó scenario_controller -->
+    <node
+        name="scenario_controller"
+        pkg="dynamic_obstacle_avoidance"
+        type="scenario_controller.py"
+        output="screen" />
+
+    <!-- Lança o nó apfm_obstacle_avoidance -->
+    <node
+        name="apfm_obstacle_avoidance"
+        pkg="dynamic_obstacle_avoidance"
+        type="apfm_obstacle_avoidance.py"
+        output="screen" />
 </launch>
