@@ -10,6 +10,6 @@ apfm_obstacle_avoidance:
   distance_to_goal: 0.1
 
 scenario_controller:
-  scenario: 0           # Defina o número do cenário conforme necessário
-  goal_x: 52.0            # Defina a posição do objetivo em X
-  goal_y: 52.0            # Defina a posição do objetivo em Y
+  scenario: 0         # Defina o número do cenário conforme necessário
+  goal_x: 30.0            # Defina a posição do objetivo em X
+  goal_y: 30.0            # Defina a posição do objetivo em Y

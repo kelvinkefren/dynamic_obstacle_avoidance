@@ -26,17 +26,17 @@ class ScenarioController:
         self.obstacle_pub = rospy.Publisher('/scenario/output_obstacles', ObstacleArray, queue_size=10)
         self.goal_pub = rospy.Publisher('/scenario/goal', Vector3, queue_size=10)
 
-        # Set up a timer to regularly publish the states and goal for scenarios 1 and 2
+        # Set up a timer to regularly publish the states and goal for scenarios 1 and 2 at 5 Hz
         if self.scenario in [1, 2]:
-            rospy.Timer(rospy.Duration(1.0), self.publish_robot_state)
-            rospy.Timer(rospy.Duration(1.0), self.publish_obstacle_state)
+            rospy.Timer(rospy.Duration(0.2), self.publish_robot_state)  # 5 Hz
+            rospy.Timer(rospy.Duration(0.2), self.publish_obstacle_state)  # 5 Hz
         else:
             # Subscribers for scenario 0 (bypass mode)
             self.robot_sub = rospy.Subscriber('/scenario/input_robot', RobotState, self.robot_callback)
             self.obstacle_sub = rospy.Subscriber('/scenario/input_obstacles', ObstacleArray, self.obstacle_callback)
 
-        # Always publish the goal
-        rospy.Timer(rospy.Duration(1.0), self.publish_goal)
+        # Always publish the goal at 5 Hz
+        rospy.Timer(rospy.Duration(0.2), self.publish_goal)  # 5 Hz
 
     def publish_goal(self, event):
         goal = Vector3(x=self.goal_x, y=self.goal_y, z=0.0)
@@ -70,8 +70,7 @@ class ScenarioController:
             self.obstacle_pub.publish(predefined_obstacles)
         elif self.scenario == 2:
             predefined_obstacles = ObstacleArray(obstacles=[
-                ObstacleState(position=Point(x=50, y=50, z=0), velocity=Vector3(x=1, y=-1, z=0), radius=1.0),
-                ObstacleState(position=Point(x=60, y=60, z=0), velocity=Vector3(x=-1, y=1, z=0), radius=1.2)
+                # Example: ObstacleState(position=Point(x=50, y=50, z=0), velocity=Vector3(x=1, y=-1, z=0), radius=1.0),
             ])
             self.obstacle_pub.publish(predefined_obstacles)
 
@@ -88,7 +87,9 @@ class ScenarioController:
     def run(self):
         rospy.spin()
 
-
 if __name__ == '__main__':
-    node = ScenarioController()
-    node.run()
+    try:
+        node = ScenarioController()
+        node.run()
+    except rospy.ROSInterruptException:
+        pass

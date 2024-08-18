@@ -19,7 +19,7 @@ class ObstacleAvoidance:
         self.robot_domain_radius = rospy.get_param('~robot_domain_radius', 0.5)
         self.safe_distance = rospy.get_param('~safe_distance', 1.0)
         self.obstacle_influence_range = rospy.get_param('~obstacle_influence_range', 5)
-        self.distance_to_goal = rospy.get_param('~distance_to_goal', 0.1)
+        # self.distance_to_goal = rospy.get_param('~distance_to_goal', 0.1)
 
         self.custom_info_pub = rospy.Publisher('/obstacle_avoidance/custom_info', CustomInfo, queue_size=10)
     
@@ -292,7 +292,7 @@ class ObstacleAvoidance:
             #print("obstaculo numero: ",i,"definicao do obst =",list_of_obstacle_positions[i],"velocidade do obstaculo",list_of_obstacle_velocities[i],"repulsive_force = ",repulsive_force,"angle_between_direction_and_velocity = ",angle_between_direction_and_velocity,"theta_m = ",angle_for_safe_distance)
         
         repulsive_force = Frd_total+Fre_total+Frs_total
-        rospy.loginfo(f"repulsive_force: { repulsive_force }  graus")
+        # rospy.loginfo(f"repulsive_force: { repulsive_force }  N")
         total_force = attractive_force + repulsive_force
         #self.plot_vector(current_robot_position[0], current_robot_position[1], total_force[0], total_force[1])
         #print("FORCA TOTAL = ",total_force)    
