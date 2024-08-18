@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import rospy
-from geometry_msgs.msg import Point, Vector3
+import math
+from geometry_msgs.msg import Point, Vector3, Quaternion
 from dynamic_obstacle_avoidance.msg import RobotState, ObstacleState, ObstacleArray
+from tf.transformations import quaternion_from_euler
 
 class ScenarioController:
     def __init__(self):
@@ -10,8 +12,14 @@ class ScenarioController:
 
         # Parameters
         self.scenario = rospy.get_param('~scenario', 0)  # Default to scenario 0
-        self.goal_x = rospy.get_param('~goal_x', 0.0)    # Default goal_x
-        self.goal_y = rospy.get_param('~goal_y', 0.0)    # Default goal_y
+        self.goal_x = rospy.get_param('~goal_x', 30.0)    # Default goal_x
+        self.goal_y = rospy.get_param('~goal_y', 30.0)    # Default goal_y
+
+        # 30-degree orientation (converted to radians)
+        self.orientation_angle = math.radians(30)
+
+        # Convert the 30-degree orientation to a quaternion
+        self.robot_orientation = Quaternion(*quaternion_from_euler(0, 0, self.orientation_angle))
 
         # Publishers
         self.robot_pub = rospy.Publisher('/scenario/output_robot', RobotState, queue_size=10)
@@ -37,15 +45,17 @@ class ScenarioController:
     def publish_robot_state(self, event):
         if self.scenario == 1:
             predefined_robot = RobotState(
-                position=Point(x=10, y=10, z=0),
+                position=Point(x=0, y=0, z=0),
                 velocity=Vector3(x=0.1, y=0.1, z=0),
+                orientation=self.robot_orientation,
                 radius=1.0
             )
             self.robot_pub.publish(predefined_robot)
         elif self.scenario == 2:
             predefined_robot = RobotState(
-                position=Point(x=20, y=20, z=0),
-                velocity=Vector3(x=1, y=1, z=0),
+                position=Point(x=0, y=0, z=0),
+                velocity=Vector3(x=0.1, y=0.1, z=0),
+                orientation=self.robot_orientation,
                 radius=1.5
             )
             self.robot_pub.publish(predefined_robot)
@@ -53,9 +63,9 @@ class ScenarioController:
     def publish_obstacle_state(self, event):
         if self.scenario == 1:
             predefined_obstacles = ObstacleArray(obstacles=[
-                ObstacleState(position=Point(x=15, y=15, z=0), velocity=Vector3(x=0, y=0, z=0), radius=2.0),
-                ObstacleState(position=Point(x=13, y=13, z=0), velocity=Vector3(x=-1, y=-1, z=0), radius=1.5),
-                ObstacleState(position=Point(x=11, y=11, z=0), velocity=Vector3(x=0, y=0, z=0), radius=1.5)
+                ObstacleState(position=Point(x=4, y=5, z=0), velocity=Vector3(x=0, y=0, z=0), radius=2.0),
+                ObstacleState(position=Point(x=4, y=3, z=0), velocity=Vector3(x=-1, y=-1, z=0), radius=1.5),
+                ObstacleState(position=Point(x=1.1, y=0.9, z=0), velocity=Vector3(x=0, y=0, z=0), radius=1.5)
             ])
             self.obstacle_pub.publish(predefined_obstacles)
         elif self.scenario == 2:
