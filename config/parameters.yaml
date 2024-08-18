@@ -1,17 +1,15 @@
 apfm_obstacle_avoidance:
-  ros__parameters:
-    attraction_scaling_factor: 6000
-    obstacle_scaling_factor_dynamic: 20000
-    obstacle_scaling_factor_static: 3000000
-    scaling_factor_emergency: 40000
-    safety_margin_radius: 0.3
-    robot_domain_radius: 0.5
-    safe_distance: 1.0
-    obstacle_influence_range: 5
-    distance_to_goal: 0.1
+  attraction_scaling_factor: 6000
+  obstacle_scaling_factor_dynamic: 20000
+  obstacle_scaling_factor_static: 3000000
+  scaling_factor_emergency: 40000
+  safety_margin_radius: 0.3
+  robot_domain_radius: 0.5
+  safe_distance: 1.0
+  obstacle_influence_range: 5
+  distance_to_goal: 0.1
 
 scenario_controller:
-  ros__parameters:
-    scenario: 1           # Defina o número do cenário conforme necessário
-    goal_x: 30.0            # Defina a posição do objetivo em X
-    goal_y: 30.0            # Defina a posição do objetivo em Y
+  scenario: 0           # Defina o número do cenário conforme necessário
+  goal_x: 52.0            # Defina a posição do objetivo em X
+  goal_y: 52.0            # Defina a posição do objetivo em Y
