@@ -14,6 +14,9 @@ class ScenarioController:
         self.scenario = rospy.get_param('~scenario', 0)  # Default to scenario 0
         self.goal_x = rospy.get_param('~goal_x', 30.0)    # Default goal_x
         self.goal_y = rospy.get_param('~goal_y', 30.0)    # Default goal_y
+        self.robot_publish_rate = rospy.get_param('~robot_publish_rate', 30.0)  # Default 30 Hz
+        self.obstacle_publish_rate = rospy.get_param('~obstacle_publish_rate', 30.0)  # Default 30 Hz
+        self.goal_publish_rate = rospy.get_param('~goal_publish_rate', 1.0)  # Default 1 Hz
 
         # 30-degree orientation (converted to radians)
         self.orientation_angle = math.radians(30)
@@ -26,24 +29,28 @@ class ScenarioController:
         self.obstacle_pub = rospy.Publisher('/scenario/output_obstacles', ObstacleArray, queue_size=10)
         self.goal_pub = rospy.Publisher('/scenario/goal', Vector3, queue_size=10)
 
-        # Set up a timer to regularly publish the states and goal for scenarios 1 and 2 at 5 Hz
-        if self.scenario in [1, 2]:
-            rospy.Timer(rospy.Duration(0.2), self.publish_robot_state)  # 5 Hz
-            rospy.Timer(rospy.Duration(0.2), self.publish_obstacle_state)  # 5 Hz
-        else:
-            # Subscribers for scenario 0 (bypass mode)
+        # Initialize empty states for bypass mode
+        self.current_robot_state = None
+        self.current_obstacle_state = None
+
+        # Set up timers to regularly publish the states and goal
+        rospy.Timer(rospy.Duration(1.0 / self.robot_publish_rate), self.publish_robot_state)
+        rospy.Timer(rospy.Duration(1.0 / self.obstacle_publish_rate), self.publish_obstacle_state)
+        rospy.Timer(rospy.Duration(1.0 / self.goal_publish_rate), self.publish_goal)
+
+        # Subscribers for scenario 0 (bypass mode)
+        if self.scenario == 0:
             self.robot_sub = rospy.Subscriber('/scenario/input_robot', RobotState, self.robot_callback)
             self.obstacle_sub = rospy.Subscriber('/scenario/input_obstacles', ObstacleArray, self.obstacle_callback)
-
-        # Always publish the goal at 5 Hz
-        rospy.Timer(rospy.Duration(0.2), self.publish_goal)  # 5 Hz
 
     def publish_goal(self, event):
         goal = Vector3(x=self.goal_x, y=self.goal_y, z=0.0)
         self.goal_pub.publish(goal)
 
     def publish_robot_state(self, event):
-        if self.scenario == 1:
+        if self.scenario == 0 and self.current_robot_state is not None:
+            self.robot_pub.publish(self.current_robot_state)
+        elif self.scenario == 1:
             predefined_robot = RobotState(
                 position=Point(x=0, y=0, z=0),
                 velocity=Vector3(x=0.1, y=0.1, z=0),
@@ -61,7 +68,9 @@ class ScenarioController:
             self.robot_pub.publish(predefined_robot)
 
     def publish_obstacle_state(self, event):
-        if self.scenario == 1:
+        if self.scenario == 0 and self.current_obstacle_state is not None:
+            self.obstacle_pub.publish(self.current_obstacle_state)
+        elif self.scenario == 1:
             predefined_obstacles = ObstacleArray(obstacles=[
                 ObstacleState(position=Point(x=4, y=5, z=0), velocity=Vector3(x=0, y=0, z=0), radius=2.0),
                 ObstacleState(position=Point(x=4, y=3, z=0), velocity=Vector3(x=-1, y=-1, z=0), radius=1.5),
@@ -70,19 +79,19 @@ class ScenarioController:
             self.obstacle_pub.publish(predefined_obstacles)
         elif self.scenario == 2:
             predefined_obstacles = ObstacleArray(obstacles=[
-                # Example: ObstacleState(position=Point(x=50, y=50, z=0), velocity=Vector3(x=1, y=-1, z=0), radius=1.0),
+                # Add obstacles for scenario 2 if needed
             ])
             self.obstacle_pub.publish(predefined_obstacles)
 
     def robot_callback(self, data):
-        # Bypass mode
+        # Bypass mode: store incoming robot state
         if self.scenario == 0:
-            self.robot_pub.publish(data)
+            self.current_robot_state = data
 
     def obstacle_callback(self, data):
-        # Bypass mode
+        # Bypass mode: store incoming obstacle state
         if self.scenario == 0:
-            self.obstacle_pub.publish(data)
+            self.current_obstacle_state = data
 
     def run(self):
         rospy.spin()

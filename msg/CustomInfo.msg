@@ -9,4 +9,5 @@ float64[] unit_vector_to_obstacle
 float64 angle_difference_for_safety
 float64[] perpendicular_unit_vector_to_obstacle
 float64 obstacle_domain_radius
+float64 distance_to_goal
 
