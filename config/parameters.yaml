@@ -5,8 +5,8 @@ apfm_obstacle_avoidance:
   scaling_factor_emergency:        40000
   safety_margin_radius:            0.3
   robot_domain_radius:             2
-  safe_distance:                   6.0
-  obstacle_influence_range:        20
+  safe_distance:                   4.0
+  obstacle_influence_range:        15
 
 scenario_controller:
   scenario:               0         # Defina o número do cenário conforme necessário
