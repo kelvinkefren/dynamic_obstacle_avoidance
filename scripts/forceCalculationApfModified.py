@@ -270,24 +270,24 @@ class ObstacleAvoidance:
 
             tolerance = 1e-10         
             if distance_to_obstacle <= collision_avoidance_radius and angle_between_direction_and_velocity < angle_for_safe_distance and center_to_center_safe_distance < distance_to_obstacle:
-                rospy.loginfo("PASSOU AKI: ")
+                # rospy.loginfo("PASSOU AKI: ")
                 if np.linalg.norm(list_of_obstacle_velocities[i]) > tolerance:
-                    rospy.loginfo("Dinamico: ")
+                    # rospy.loginfo("Dinamico: ")
                     Frd = self.calculate_Frd(distance_to_obstacle,center_to_center_safe_distance,self.obstacle_influence_range,angle_between_direction_and_velocity,relative_speed_vector,angle_for_safe_distance,angle_difference_for_safety,vector_to_obstacle,self.obstacle_scaling_factor_dynamic,obstacle_domain_radius,distance_to_goal,unit_vector_to_obstacle,perpendicular_unit_vector_to_obstacle,normalized_vector_to_goal)
                 else:
-                    rospy.loginfo("Estatico: ")
+                    # rospy.loginfo("Estatico: ")
                     Frs = self.calculate_Frs(distance_to_obstacle, self.safety_margin_radius, distance_to_goal, self.obstacle_influence_range, self.obstacle_scaling_factor_static, obstacle_domain_radius, unit_vector_to_obstacle, normalized_vector_to_goal)
             else:
                 if distance_to_obstacle < center_to_center_safe_distance :
-                    rospy.loginfo("Emergencia: ")
+                    # rospy.loginfo("Emergencia: ")
                     Fre = self.calculate_Fre(distance_to_obstacle, self.safety_margin_radius, center_to_center_safe_distance, distance_to_goal, self.scaling_factor_emergency, obstacle_domain_radius, unit_vector_to_obstacle, relative_speed_vector, angle_between_direction_and_velocity, normalized_vector_to_goal,perpendicular_unit_vector_to_obstacle)
                 else:
                     None
 
-            rospy.loginfo(f"Obstaculo numero {i+1}")
-            rospy.loginfo(f"Frd = {Frd}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," dinamic --------------  Frd = ",Frd)
-            rospy.loginfo(f"Frs = {Frs}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," static --------------  Frs = ",Frs)
-            rospy.loginfo(f"Fre = {Fre}")#print("distance_to_obstacle =",distance_to_obstacle,"< center_to_center_safe_distance =", center_to_center_safe_distance," --------------  Fre = ",Fre)
+            # rospy.loginfo(f"Obstaculo numero {i+1}")
+            # rospy.loginfo(f"Frd = {Frd}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," dinamic --------------  Frd = ",Frd)
+            # rospy.loginfo(f"Frs = {Frs}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," static --------------  Frs = ",Frs)
+            # rospy.loginfo(f"Fre = {Fre}")#print("distance_to_obstacle =",distance_to_obstacle,"< center_to_center_safe_distance =", center_to_center_safe_distance," --------------  Fre = ",Fre)
                
             Frd_total += Frd
             Fre_total += Fre
