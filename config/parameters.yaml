@@ -10,8 +10,8 @@ apfm_obstacle_avoidance:
 
 scenario_controller:
   scenario:               0         # Defina o número do cenário conforme necessário
-  goal_x:                 40.0            # Defina a posição do objetivo em X
-  goal_y:                 30.0            # Defina a posição do objetivo em Y
+  goal_x:                 80.0            # Defina a posição do objetivo em X
+  goal_y:                 80.0            # Defina a posição do objetivo em Y
   goal_publish_rate:      1
-  obstacle_publish_rate:  30
-  robot_publish_rate:     30
+  obstacle_publish_rate:  10
+  robot_publish_rate:     10

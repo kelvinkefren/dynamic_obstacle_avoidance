@@ -12,10 +12,10 @@ class ScenarioController:
 
         # Parameters
         self.scenario = rospy.get_param('~scenario', 0)  # Default to scenario 0
-        self.goal_x = rospy.get_param('~goal_x', 30.0)    # Default goal_x
-        self.goal_y = rospy.get_param('~goal_y', 30.0)    # Default goal_y
-        self.robot_publish_rate = rospy.get_param('~robot_publish_rate', 30.0)  # Default 30 Hz
-        self.obstacle_publish_rate = rospy.get_param('~obstacle_publish_rate', 30.0)  # Default 30 Hz
+        self.goal_x = rospy.get_param('~goal_x', 80.0)    # Default goal_x
+        self.goal_y = rospy.get_param('~goal_y', 80.0)    # Default goal_y
+        self.robot_publish_rate = rospy.get_param('~robot_publish_rate', 10.0)  # Default 30 Hz
+        self.obstacle_publish_rate = rospy.get_param('~obstacle_publish_rate', 10.0)  # Default 30 Hz
         self.goal_publish_rate = rospy.get_param('~goal_publish_rate', 1.0)  # Default 1 Hz
 
         # 30-degree orientation (converted to radians)
@@ -66,6 +66,13 @@ class ScenarioController:
                 radius=1.5
             )
             self.robot_pub.publish(predefined_robot)
+        
+        elif self.scenario == 3: # Cenário A (Básico)
+            # Obst estático (40,40), raio ~1.0
+            predefined_obstacles = ObstacleArray(obstacles=[
+                ObstacleState(position=Point(x=40,y=40,z=0), velocity=Vector3(x=0,y=0,z=0), radius=1.0, name='vegetation3_buoy')
+            ])
+            self.obstacle_pub.publish(predefined_obstacles)
 
     def publish_obstacle_state(self, event):
         if self.scenario == 0 and self.current_obstacle_state is not None:

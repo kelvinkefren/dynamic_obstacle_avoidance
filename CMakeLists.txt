@@ -19,8 +19,9 @@ add_message_files(
   ObstacleState.msg
   ObstacleArray.msg
   CustomInfo.msg
+  PerformanceMetrics.msg
 )
-
+	
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES

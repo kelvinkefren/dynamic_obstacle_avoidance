@@ -15,10 +15,10 @@ class ObstacleAvoidance:
         self.obstacle_scaling_factor_dynamic = rospy.get_param('~obstacle_scaling_factor_dynamic', 20000)
         self.obstacle_scaling_factor_static = rospy.get_param('~obstacle_scaling_factor_static', 30000000)
         self.scaling_factor_emergency = rospy.get_param('~scaling_factor_emergency', 40000)
-        self.safety_margin_radius = rospy.get_param('~safety_margin_radius', 0.3)
+        self.safety_margin_radius = rospy.get_param('~safety_margin_radius', 2)
         self.robot_domain_radius = rospy.get_param('~robot_domain_radius', 2)
         self.safe_distance = rospy.get_param('~safe_distance', 6.0)
-        self.obstacle_influence_range = rospy.get_param('~obstacle_influence_range', 10)
+        self.obstacle_influence_range = rospy.get_param('~obstacle_influence_range', 20)
         # self.distance_to_goal = rospy.get_param('~distance_to_goal', 0.1)
 
         self.custom_info_pub = rospy.Publisher('/obstacle_avoidance/custom_info', CustomInfo, queue_size=10)

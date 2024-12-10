@@ -43,6 +43,12 @@ class APFMAvoidance:
         self.robot_state = robot_state
 
     def process_data_timer(self, event):
+        if self.obstacles is None:
+            rospy.logwarn("No obstacles data received yet. Skipping processing.")
+            return
+        if self.robot_state is None:
+            rospy.logwarn("No robot state data received yet. Skipping processing.")
+            return
         # Extract positions, radii, and velocities of obstacles
         list_of_obstacle_positions = [[ob.position.x, ob.position.y] for ob in self.obstacles]
         list_of_obstacle_radii = [ob.radius for ob in self.obstacles]

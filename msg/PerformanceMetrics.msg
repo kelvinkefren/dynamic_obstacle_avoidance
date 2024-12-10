@@ -1,0 +1,8 @@
+# dynamic_obstacle_avoidance/msg/PerformanceMetrics.msg
+float64 distance_to_goal
+float64 min_distance_to_obstacle
+string colreg_situation
+float64 elapsed_time
+float64 current_heading
+float64 desired_heading
+
