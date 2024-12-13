@@ -22,6 +22,7 @@ class ObstacleAvoidance:
         # self.distance_to_goal = rospy.get_param('~distance_to_goal', 0.1)
 
         self.custom_info_pub = rospy.Publisher('/obstacle_avoidance/custom_info', CustomInfo, queue_size=10)
+        self.avoidance_type = "none"
     
 
 
@@ -134,10 +135,7 @@ class ObstacleAvoidance:
         #unit_vector_to_obstacle = (obstacle_position - current_robot_position) / distance_to_bstacle
         unit_vector_to_obstacle = (np.array(obstacle_position) - np.array(current_robot_position)) / distance_to_obstacle
         angle_difference_for_safety = angle_for_safe_distance-angle_between_direction_and_velocity
-        angulacao = np.degrees(np.arccos(np.dot(unit_vector_to_obstacle, normalized_vector_to_goal)/(np.linalg.norm(unit_vector_to_obstacle) * np.linalg.norm(normalized_vector_to_goal))))
-        histerese = 0
-        if angulacao < 5 or angulacao > 355:
-            histerese = 0.1
+        # angulacao = np.degrees(np.arccos(np.dot(unit_vector_to_obstacle, normalized_vector_to_goal)/(np.linalg.norm(unit_vector_to_obstacle) * np.linalg.norm(normalized_vector_to_goal))))
         #perpendicular_unit_vector_to_obstacle = comparar_vetores(vector_to_obstacle, relative_speed_vector, obstacle_velocitiy,unit_vector_to_obstacle,histerese)
         perpendicular_unit_vector_to_obstacle = self.determine_avoidance_direction(current_robot_velocity,obstacle_velocitiy,unit_vector_to_obstacle)
         #perpendicular_unit_vector_to_obstacle = determiscaling_factor_emergency_side(vector_to_obstacle, relative_speed_vector,unit_vector_to_obstacle)
@@ -174,15 +172,19 @@ class ObstacleAvoidance:
 
         # Se o ângulo estiver entre 175 e 185 graus, escolha uma direção de rotação padrão (anti-horário, por exemplo)
         if 165 <= angle_between_velocities_deg <= 195:
+            self.avoidance_type = "headsOn"
             return -np.array([unit_vector_to_obstacle[1], -unit_vector_to_obstacle[0]])  #"anti-horário"
-        elif cross_product_z_component > 0:
+        elif cross_product_z_component >= 0:
+            self.avoidance_type = "Crossing A"
             return -np.array([unit_vector_to_obstacle[1], -unit_vector_to_obstacle[0]])  #"anti-horário"
         elif cross_product_z_component < 0:
+            self.avoidance_type = "Crossing B"
             return -np.array([-unit_vector_to_obstacle[1], unit_vector_to_obstacle[0]]) #"horário"
         else:
+            self.avoidance_type = "None"
             return -np.array([unit_vector_to_obstacle[1], -unit_vector_to_obstacle[0]]) #"paralelo"  
 
-
+        
         # caso não tenha retornado ainda, não há comparação possível
         #print("Não há comparação possível")
         return np.array([-unit_vector_to_obstacle[1], unit_vector_to_obstacle[0]])
@@ -249,50 +251,54 @@ class ObstacleAvoidance:
             numero_do_obstaculo = i+1 
 
             distance_to_obstacle, center_to_center_safe_distance, collision_avoidance_radius, vector_to_obstacle, angle_for_safe_distance, relative_speed_vector, angle_between_direction_and_velocity, unit_vector_to_obstacle, angle_difference_for_safety, perpendicular_unit_vector_to_obstacle, obstacle_domain_radius = self.iniciation(list_of_obstacle_positions[i], current_robot_position, current_robot_velocity, list_of_obstacle_velocities[i], list_of_obstacle_radii[i], self.safe_distance, self.obstacle_influence_range, self.robot_domain_radius,normalized_vector_to_goal,numero_do_obstaculo)
+            
+            if distance_to_obstacle <= collision_avoidance_radius:
+                # Criação da mensagem CustomInfo
+                custom_info_msg = CustomInfo()
+                custom_info_msg.distance_to_obstacle = distance_to_obstacle
+                custom_info_msg.center_to_center_safe_distance = center_to_center_safe_distance
+                custom_info_msg.collision_avoidance_radius = collision_avoidance_radius
+                custom_info_msg.vector_to_obstacle = vector_to_obstacle.tolist()
+                custom_info_msg.angle_for_safe_distance = angle_for_safe_distance
+                custom_info_msg.relative_speed_vector = relative_speed_vector.tolist()
+                custom_info_msg.angle_between_direction_and_velocity = angle_between_direction_and_velocity
+                custom_info_msg.unit_vector_to_obstacle = unit_vector_to_obstacle.tolist()
+                custom_info_msg.angle_difference_for_safety = angle_difference_for_safety
+                custom_info_msg.perpendicular_unit_vector_to_obstacle = perpendicular_unit_vector_to_obstacle.tolist()
+                custom_info_msg.obstacle_domain_radius = obstacle_domain_radius
+                custom_info_msg.distance_to_goal = distance_to_goal
 
-            # Criação da mensagem CustomInfo
-            custom_info_msg = CustomInfo()
-            custom_info_msg.distance_to_obstacle = distance_to_obstacle
-            custom_info_msg.center_to_center_safe_distance = center_to_center_safe_distance
-            custom_info_msg.collision_avoidance_radius = collision_avoidance_radius
-            custom_info_msg.vector_to_obstacle = vector_to_obstacle.tolist()
-            custom_info_msg.angle_for_safe_distance = angle_for_safe_distance
-            custom_info_msg.relative_speed_vector = relative_speed_vector.tolist()
-            custom_info_msg.angle_between_direction_and_velocity = angle_between_direction_and_velocity
-            custom_info_msg.unit_vector_to_obstacle = unit_vector_to_obstacle.tolist()
-            custom_info_msg.angle_difference_for_safety = angle_difference_for_safety
-            custom_info_msg.perpendicular_unit_vector_to_obstacle = perpendicular_unit_vector_to_obstacle.tolist()
-            custom_info_msg.obstacle_domain_radius = obstacle_domain_radius
-            custom_info_msg.distance_to_goal = distance_to_goal
+                # Publicação da mensagem em um tópico
+                self.custom_info_pub.publish(custom_info_msg)
 
-            # Publicação da mensagem em um tópico
-            self.custom_info_pub.publish(custom_info_msg)
-
-            tolerance = 1e-10         
-            if distance_to_obstacle <= collision_avoidance_radius and angle_between_direction_and_velocity < angle_for_safe_distance and center_to_center_safe_distance < distance_to_obstacle:
-                # rospy.loginfo("PASSOU AKI: ")
-                if np.linalg.norm(list_of_obstacle_velocities[i]) > tolerance:
-                    # rospy.loginfo("Dinamico: ")
-                    Frd = self.calculate_Frd(distance_to_obstacle,center_to_center_safe_distance,self.obstacle_influence_range,angle_between_direction_and_velocity,relative_speed_vector,angle_for_safe_distance,angle_difference_for_safety,vector_to_obstacle,self.obstacle_scaling_factor_dynamic,obstacle_domain_radius,distance_to_goal,unit_vector_to_obstacle,perpendicular_unit_vector_to_obstacle,normalized_vector_to_goal)
+                tolerance = 1e-10         
+                if distance_to_obstacle <= collision_avoidance_radius and angle_between_direction_and_velocity < angle_for_safe_distance and center_to_center_safe_distance < distance_to_obstacle:
+                    # rospy.loginfo("PASSOU AKI: ")
+                    if np.linalg.norm(list_of_obstacle_velocities[i]) > tolerance:
+                        # rospy.loginfo("Dinamico: ")
+                        custom_info_msg.action_type = "Obstáculo Dinâmico"
+                        Frd = self.calculate_Frd(distance_to_obstacle,center_to_center_safe_distance,self.obstacle_influence_range,angle_between_direction_and_velocity,relative_speed_vector,angle_for_safe_distance,angle_difference_for_safety,vector_to_obstacle,self.obstacle_scaling_factor_dynamic,obstacle_domain_radius,distance_to_goal,unit_vector_to_obstacle,perpendicular_unit_vector_to_obstacle,normalized_vector_to_goal)
+                    else:
+                        # rospy.loginfo("Estatico: ")
+                        custom_info_msg.action_type = "Obstáculo Estático"
+                        Frs = self.calculate_Frs(distance_to_obstacle, self.safety_margin_radius, distance_to_goal, self.obstacle_influence_range, self.obstacle_scaling_factor_static, obstacle_domain_radius, unit_vector_to_obstacle, normalized_vector_to_goal)
                 else:
-                    # rospy.loginfo("Estatico: ")
-                    Frs = self.calculate_Frs(distance_to_obstacle, self.safety_margin_radius, distance_to_goal, self.obstacle_influence_range, self.obstacle_scaling_factor_static, obstacle_domain_radius, unit_vector_to_obstacle, normalized_vector_to_goal)
-            else:
-                if distance_to_obstacle < center_to_center_safe_distance :
-                    # rospy.loginfo("Emergencia: ")
-                    Fre = self.calculate_Fre(distance_to_obstacle, self.safety_margin_radius, center_to_center_safe_distance, distance_to_goal, self.scaling_factor_emergency, obstacle_domain_radius, unit_vector_to_obstacle, relative_speed_vector, angle_between_direction_and_velocity, normalized_vector_to_goal,perpendicular_unit_vector_to_obstacle)
-                else:
-                    None
+                    if distance_to_obstacle <= center_to_center_safe_distance :
+                        # rospy.loginfo("Emergencia: ")
+                        custom_info_msg.action_type = "Obstáculo Emergência"
+                        Fre = self.calculate_Fre(distance_to_obstacle, self.safety_margin_radius, center_to_center_safe_distance, distance_to_goal, self.scaling_factor_emergency, obstacle_domain_radius, unit_vector_to_obstacle, relative_speed_vector, angle_between_direction_and_velocity, normalized_vector_to_goal,perpendicular_unit_vector_to_obstacle)
+                    else:
+                        custom_info_msg.action_type = "Sem ação"
 
-            # rospy.loginfo(f"Obstaculo numero {i+1}")
-            # rospy.loginfo(f"Frd = {Frd}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," dinamic --------------  Frd = ",Frd)
-            # rospy.loginfo(f"Frs = {Frs}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," static --------------  Frs = ",Frs)
-            # rospy.loginfo(f"Fre = {Fre}")#print("distance_to_obstacle =",distance_to_obstacle,"< center_to_center_safe_distance =", center_to_center_safe_distance," --------------  Fre = ",Fre)
-               
-            Frd_total += Frd
-            Fre_total += Fre
-            Frs_total += Frs
-            #print("obstaculo numero: ",i,"definicao do obst =",list_of_obstacle_positions[i],"velocidade do obstaculo",list_of_obstacle_velocities[i],"repulsive_force = ",repulsive_force,"angle_between_direction_and_velocity = ",angle_between_direction_and_velocity,"theta_m = ",angle_for_safe_distance)
+                # rospy.loginfo(f"Obstaculo numero {i+1}")
+                # rospy.loginfo(f"Frd = {Frd}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," dinamic --------------  Frd = ",Frd)
+                # rospy.loginfo(f"Frs = {Frs}")#print("distance_to_obstacle =",distance_to_obstacle,"< collision_avoidance_radius =",collision_avoidance_radius," static --------------  Frs = ",Frs)
+                # rospy.loginfo(f"Fre = {Fre}")#print("distance_to_obstacle =",distance_to_obstacle,"< center_to_center_safe_distance =", center_to_center_safe_distance," --------------  Fre = ",Fre)
+                
+                Frd_total += Frd
+                Fre_total += Fre
+                Frs_total += Frs
+                #print("obstaculo numero: ",i,"definicao do obst =",list_of_obstacle_positions[i],"velocidade do obstaculo",list_of_obstacle_velocities[i],"repulsive_force = ",repulsive_force,"angle_between_direction_and_velocity = ",angle_between_direction_and_velocity,"theta_m = ",angle_for_safe_distance)
         
         repulsive_force = Frd_total+Fre_total+Frs_total
         # rospy.loginfo(f"repulsive_force: { repulsive_force }  N")
