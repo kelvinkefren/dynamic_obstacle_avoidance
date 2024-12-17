@@ -1,17 +1,16 @@
 apfm_obstacle_avoidance:
   attraction_scaling_factor:       60000
-  obstacle_scaling_factor_dynamic: 20000
+  obstacle_scaling_factor_dynamic: 200000
   obstacle_scaling_factor_static:  30000000
-  scaling_factor_emergency:        40000
-  safety_margin_radius:            0.3
-  robot_domain_radius:             2
-  safe_distance:                   4.0
-  obstacle_influence_range:        15
+  scaling_factor_emergency:        400000
+  robot_domain_radius:             1.4
+  safe_distance:                   9.82
+  # obstacle_influence_range:        15
 
 scenario_controller:
   scenario:               0         # Defina o número do cenário conforme necessário
   goal_x:                 80.0            # Defina a posição do objetivo em X
-  goal_y:                 80.0            # Defina a posição do objetivo em Y
+  goal_y:                 0.0            # Defina a posição do objetivo em Y
   goal_publish_rate:      1
   obstacle_publish_rate:  10
   robot_publish_rate:     10

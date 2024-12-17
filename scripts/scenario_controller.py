@@ -12,8 +12,8 @@ class ScenarioController:
 
         # Parameters
         self.scenario = rospy.get_param('~scenario', 0)  # Default to scenario 0
-        self.goal_x = rospy.get_param('~goal_x', 80.0)    # Default goal_x
-        self.goal_y = rospy.get_param('~goal_y', 80.0)    # Default goal_y
+        self.goal_x = rospy.get_param('~goal_x', 60.0)    # Default goal_x
+        self.goal_y = rospy.get_param('~goal_y', 0.0)    # Default goal_y
         self.robot_publish_rate = rospy.get_param('~robot_publish_rate', 10.0)  # Default 30 Hz
         self.obstacle_publish_rate = rospy.get_param('~obstacle_publish_rate', 10.0)  # Default 30 Hz
         self.goal_publish_rate = rospy.get_param('~goal_publish_rate', 1.0)  # Default 1 Hz

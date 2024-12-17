@@ -12,3 +12,5 @@ float64 obstacle_domain_radius
 float64 distance_to_goal
 string action_type
 string avoidance_type
+float64 CR
+float64 dm

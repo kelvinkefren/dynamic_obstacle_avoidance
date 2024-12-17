@@ -120,8 +120,7 @@ def determine_avoidance(barco_pos, barco_vel, obst_pos, obst_vel):
 
     # Verificar risco de colisão
     risk_of_collision = check_collision_risk(barco_pos, barco_vel, obst_pos, obst_vel, dm)
-
-    sentido = "horário" if cross_relative > 0 else "anti-horário"
+    sentido = "horário" if cross_z > 0 else "anti-horário"
 
     if risk_of_collision:
         # Classificar o tipo de encontro
@@ -129,12 +128,15 @@ def determine_avoidance(barco_pos, barco_vel, obst_pos, obst_vel):
             avoidance_type = "HeadsOn"
         elif 15 < angle_to_obstacle <= 112.5:
             avoidance_type = "Crossing A"
+            if cross_relative < 0:
+                sentido = "anti-horário" if sentido == "horário" else "horário"
         elif 247.5 <= angle_to_obstacle < 345:
             avoidance_type = "Crossing B"
             # Inverter sentido se for "Crossing B" e cross_relative > 0
-        elif angle_to_obstacle > 112.5 or angle_to_obstacle <= 247.5:
+            if cross_relative > 0:
+                sentido = "anti-horário" if sentido == "horário" else "horário"
+        elif 112.5 > angle_to_obstacle >= 247.5:
             avoidance_type = "Overtaking"
-            sentido = "anti-horário" if cross_relative > 0 else "horário"
         else:
             avoidance_type = "No avoidance"
     else:
@@ -266,77 +268,31 @@ barco_vel = [1.0, 0]
 
 # Diferentes posições do obstáculo
 obst_positions = [
-    [0, 25],
-    [0, 25],
-    [0, -25],
-    [0, -25],
-    [-25, 10],
-    [-25, 10],
-    [-25, -10],
-    [-25,-10],    
-    [-25,0],
-    [-25,0],
-    [25, 0],
-    [25, 0],
-    [25, 10],
-    [25, 10],
-    [25, -10],
-    [25,-10],
-
-    [0, 15],
-    [0, 15],
-    [0, -15],
-    [0, -15],
-    [-15, 10],
-    [-15, 10],
-    [-15, -10],
-    [-15,-10],    
-    [-15,0],
-    [-15,0],
-    [15, 0],
-    [15, 0],
-    [15, 10],
-    [15, 10],
-    [15, -10],
-    [15,-10],
+    [-2.6, 14.8],
+    [-2.6, -14.8],
+    [-5.2, 29.5],
+    [-5.2, -29.5],
+    [10.6, 10.6],
+    [10.6, -10.6], 
+    [21.2, -21.2],  
+    [21.2, 21.2],
+    [14.8, 2.6],
+    [29.5, 5.2],
+    [14.8, -2.6],
+    [29.5, -5.2]
 ]
 
 
 # Conjunto de velocidades do obstáculo: 2 velocidades e suas opostas
 obst_vel_candidates = [
-    [0.9,-0.3],
-    [1.1,-0.3],
-    [0.9,0.3],
-    [1.1,0.3],
-    [1.4,-0.1],
-    [1.4,-0.4],
-    [1.4,0.1],
-    [1.4,0.4],
-    [1.4,0.1],
-    [1.4,-0.1],
-    [0.4,-0.1],
-    [0.4,0.1],
-    [-0.8,-0.1],
-    [-0.1,-0.9],
-    [-0.8,0.1],
-    [-0.1,1.1],
-
-    [0.9,-0.3],
-    [1.1,-0.3],
-    [0.9,0.3],
-    [1.1,0.3],
-    [1.4,-0.1],
-    [1.4,-0.4],
-    [1.4,0.1],
-    [1.4,0.4],
-    [1.4,0.1],
-    [1.4,-0.1],
-    [0.9,-0.1],
-    [0.9,0.1],
-    [-0.8,-0.1],
-    [-0.1,-0.9],
-    [-0.8,0.1],
-    [-0.1,1.1],
+    [0.9,0.0],
+    [0.78, 0.45],
+    [0.64, 0.636],
+    [0.45, 0.78],
+    [0.0,0.9],
+    [-0.45,0.78],
+    [-0.64,0.64],
+    [-0.78,0.45]
 ]
 
 
@@ -344,20 +300,37 @@ obst_vel_candidates = [
 results = []
 
 # Executar simulações
-# Executar simulações
 sim_count = 1
-for pos, vel in zip(obst_positions, obst_vel_candidates):  # Usa apenas uma posição e sua velocidade correspondente
-    # Velocidade original
-    avoidance_type, cross_z, dm, CR, angle_to_obstacle, tau, sentido = determine_avoidance(barco_pos, barco_vel, pos, vel)
-    relative_velocity = np.array(barco_vel) - np.array(vel)
-    angle_between = calculate_angle_between_vectors(barco_vel, vel)
-    dot_product = np.dot(barco_vel, vel)
-    angle_relative_to_line = calculate_angle_between_vectors(relative_velocity, np.array(pos) - np.array(barco_pos))
+for pos in obst_positions:
+    for vel in obst_vel_candidates:
+        # Velocidade original
+        avoidance_type, cross_z, dm, CR, angle_to_obstacle, tau, sentido = determine_avoidance(barco_pos, barco_vel, pos, vel)
+        relative_velocity = np.array(barco_vel) - np.array(vel)
+        angle_between = calculate_angle_between_vectors(barco_vel, vel)
+        dot_product = np.dot(barco_vel, vel)
+        angle_relative_to_line = calculate_angle_between_vectors(relative_velocity, np.array(pos) - np.array(barco_pos))
 
-    results.append([pos, vel, cross_z, dot_product, angle_between, sentido, avoidance_type, angle_relative_to_line, angle_to_obstacle])
-    plot_positions_and_velocities_with_relative(barco_pos, barco_vel, pos, vel, dm, CR, tau,
-                                                title_suffix=f"Pos={pos}, Vel={vel}, Tipo={avoidance_type}")
-    sim_count += 1
+
+        results.append([pos, vel, cross_z, dot_product, angle_between, sentido, avoidance_type, angle_relative_to_line, angle_to_obstacle])
+        if avoidance_type != "No avoidance":
+            plot_positions_and_velocities_with_relative(barco_pos, barco_vel, pos, vel, dm, CR, tau,
+                                                        title_suffix=f"Pos={pos}, Vel={vel}, Tipo={avoidance_type}")
+        sim_count += 1
+        
+        # Velocidade oposta
+        vel_oposta = [-vel[0], -vel[1]]
+        avoidance_type, cross_z, dm, CR, angle_to_obstacle, tau, sentido = determine_avoidance(barco_pos, barco_vel, pos, vel_oposta)
+        relative_velocity = np.array(barco_vel) - np.array(vel_oposta)
+        angle_between = calculate_angle_between_vectors(barco_vel, vel_oposta)
+        dot_product = np.dot(barco_vel, vel_oposta)
+        angle_relative_to_line = calculate_angle_between_vectors(relative_velocity, np.array(pos) - np.array(barco_pos))
+
+
+        results.append([pos, vel_oposta, cross_z, dot_product, angle_between, sentido, avoidance_type, angle_relative_to_line, angle_to_obstacle])
+        if avoidance_type != "No avoidance":
+            plot_positions_and_velocities_with_relative(barco_pos, barco_vel, pos, vel_oposta, dm, CR, tau,
+                                                        title_suffix=f"Pos={pos}, Vel={vel_oposta}, Tipo={avoidance_type}")
+        sim_count += 1
 
 # Salvar resultados em CSV
 with open('simulation_results.csv', 'w', newline='') as csvfile:
