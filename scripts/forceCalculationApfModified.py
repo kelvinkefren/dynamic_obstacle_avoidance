@@ -29,7 +29,7 @@ class ObstacleAvoidance:
         
         self.dm = None
         self.CR = None
-        self.tecnica = 2
+        self.tecnica =1
         self.crossing_b = 0
         self.previous = "none"
         self.state = "none"
@@ -328,7 +328,7 @@ class ObstacleAvoidance:
                     if avoidance_type_robot_from_obst=="HeadsOn":
                         sentido="cross_relative"
                     if avoidance_type_robot_from_obst == "Crossing A":
-                        sentido="cross_relative"
+                        sentido="anti horario"
                     if avoidance_type_robot_from_obst == "Crossing B":
                         sentido="cross_relative"
                     if avoidance_type_robot_from_obst == "Overtaking":
@@ -549,7 +549,7 @@ class ObstacleAvoidance:
         # rospy.loginfo(f"attractive_force : {attractive_force}")
         if self.tecnica == 3:
             factor_att = 1
-            factor_rep = 1*distance_to_goal/2
+            factor_rep = 10*distance_to_goal/2
             attractive_force = self.modified_attractive_force(current_robot_position, vector_to_goal, factor_att, distance_to_goal, normalized_vector_to_goal)
         
             # Força repulsiva padrão (uma soma das forças repulsivas de todos os obstáculos)
@@ -578,7 +578,6 @@ class ObstacleAvoidance:
             return total_force, attractive_force, repulsive_force, 0, 0, 0
 
         else:
-
             
             # [6]
             Frd_total = 0

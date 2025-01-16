@@ -1,7 +1,7 @@
 apfm_obstacle_avoidance:
   attraction_scaling_factor:       30
   obstacle_scaling_factor_dynamic: 2000
-  obstacle_scaling_factor_static:  300000
+  obstacle_scaling_factor_static:  600000
   scaling_factor_emergency:        2000
   robot_domain_radius:             1.4
   safe_distance:                   9.82
