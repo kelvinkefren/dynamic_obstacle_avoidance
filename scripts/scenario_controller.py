@@ -5,6 +5,7 @@ import math
 from geometry_msgs.msg import Point, Vector3, Quaternion
 from dynamic_obstacle_avoidance.msg import RobotState, ObstacleState, ObstacleArray
 from tf.transformations import quaternion_from_euler
+from std_msgs.msg import Bool
 
 class ScenarioController:
     def __init__(self):
@@ -12,8 +13,9 @@ class ScenarioController:
 
         # Parameters
         self.scenario = rospy.get_param('~scenario', 0)  # Default to scenario 0
-        self.goal_x = rospy.get_param('~goal_x', 60.0)    # Default goal_x
-        self.goal_y = rospy.get_param('~goal_y', 0.0)    # Default goal_y
+        self.goal_x = rospy.get_param('~goal_x', 70.0)    # Default goal_x
+        self.goal_y = rospy.get_param('~goal_y', 70.0)    # Default goal_y
+        self.TOLERANCE = rospy.get_param('~tolerance', 6.0)  # Mesmo padrão do wrench_calculator.py
         self.robot_publish_rate = rospy.get_param('~robot_publish_rate', 10.0)  # Default 30 Hz
         self.obstacle_publish_rate = rospy.get_param('~obstacle_publish_rate', 10.0)  # Default 30 Hz
         self.goal_publish_rate = rospy.get_param('~goal_publish_rate', 1.0)  # Default 1 Hz
@@ -28,15 +30,18 @@ class ScenarioController:
         self.robot_pub = rospy.Publisher('/scenario/output_robot', RobotState, queue_size=10)
         self.obstacle_pub = rospy.Publisher('/scenario/output_obstacles', ObstacleArray, queue_size=10)
         self.goal_pub = rospy.Publisher('/scenario/goal', Vector3, queue_size=10)
+        self.reached_goal_pub = rospy.Publisher('/scenario/reached_goal', Bool, queue_size=10)
 
         # Initialize empty states for bypass mode
         self.current_robot_state = None
         self.current_obstacle_state = None
+        self.verificacao = False
 
         # Set up timers to regularly publish the states and goal
         rospy.Timer(rospy.Duration(1.0 / self.robot_publish_rate), self.publish_robot_state)
         rospy.Timer(rospy.Duration(1.0 / self.obstacle_publish_rate), self.publish_obstacle_state)
         rospy.Timer(rospy.Duration(1.0 / self.goal_publish_rate), self.publish_goal)
+        
 
         # Subscribers for scenario 0 (bypass mode)
         if self.scenario == 0:
@@ -50,6 +55,7 @@ class ScenarioController:
     def publish_robot_state(self, event):
         if self.scenario == 0 and self.current_robot_state is not None:
             self.robot_pub.publish(self.current_robot_state)
+            self._update_reached_goal(self.current_robot_state.position)
         elif self.scenario == 1:
             predefined_robot = RobotState(
                 position=Point(x=0, y=0, z=0),
@@ -58,6 +64,7 @@ class ScenarioController:
                 radius=1.0
             )
             self.robot_pub.publish(predefined_robot)
+            self._update_reached_goal(predefined_robot.position)
         elif self.scenario == 2:
             predefined_robot = RobotState(
                 position=Point(x=0, y=0, z=0),
@@ -66,6 +73,7 @@ class ScenarioController:
                 radius=1.5
             )
             self.robot_pub.publish(predefined_robot)
+            self._update_reached_goal(predefined_robot.position)
         
         elif self.scenario == 3: # Cenário A (Básico)
             # Obst estático (40,40), raio ~1.0
@@ -99,6 +107,22 @@ class ScenarioController:
         # Bypass mode: store incoming obstacle state
         if self.scenario == 0:
             self.current_obstacle_state = data
+
+    def _update_reached_goal(self, pos: Point):
+        # Implementação idêntica à lógica do wrench_calculator.py:
+        # publica True/False apenas na transição (via self.verificacao).
+        dx = self.goal_x - pos.x
+        dy = self.goal_y - pos.y
+        distance_to_goal = math.sqrt(dx*dx + dy*dy)
+
+        if distance_to_goal <= self.TOLERANCE:
+            if self.verificacao == False:
+                self.reached_goal_pub.publish(True)
+                self.verificacao = True
+        else:
+            if self.verificacao == True:
+                self.reached_goal_pub.publish(False)
+                self.verificacao = False
 
     def run(self):
         rospy.spin()

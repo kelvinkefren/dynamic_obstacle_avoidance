@@ -638,7 +638,8 @@ class ObstacleAvoidance:
                         else:
                             # rospy.loginfo("Estatico: ")
                             custom_info_msg.action_type = "Obstáculo Estático"
-                            Frs = self.calculate_Frs(distance_to_obstacle, self.safety_margin_radius, distance_to_goal, self.obstacle_influence_range, self.obstacle_scaling_factor_static, obstacle_domain_radius, unit_vector_to_obstacle, normalized_vector_to_goal)
+                            Frd = self.calculate_Frd(distance_to_obstacle,center_to_center_safe_distance,self.obstacle_influence_range,angle_between_direction_and_velocity,relative_speed_vector,angle_for_safe_distance,angle_difference_for_safety,vector_to_obstacle,self.obstacle_scaling_factor_dynamic,obstacle_domain_radius,distance_to_goal,unit_vector_to_obstacle,perpendicular_unit_vector_to_obstacle,normalized_vector_to_goal,avoidance_type)
+                            # Frs = self.calculate_Frs(distance_to_obstacle, self.safety_margin_radius, distance_to_goal, self.obstacle_influence_range, self.obstacle_scaling_factor_static, obstacle_domain_radius, unit_vector_to_obstacle, normalized_vector_to_goal)
                     else:
                         if distance_to_obstacle <= center_to_center_safe_distance :
                             # rospy.loginfo("Emergencia: ")

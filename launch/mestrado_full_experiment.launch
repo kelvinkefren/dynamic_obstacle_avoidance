@@ -1,0 +1,187 @@
+<launch>
+  <!--
+    mestrado_full_experiment.launch
+
+    Você disse que hoje roda manualmente:
+      rosrun migbot_allocation migbot_allocation_node
+      rosrun migbot_apf_controller gazebo_scenario.py
+      rosrun migbot_apf_vw_ref apf_force_to_vw_ref.py
+      roslaunch migbot_velocity_feedback_controller velocity_feedback_control.launch
+      rosrun dynamic_obstacle_avoidance scenario_controller.py
+      (e depois) rosrun dynamic_obstacle_avoidance apfm_obstacle_avoidance.py   (ou apf_lyu_2018.py, etc.)
+
+    Este launch junta tudo isso +:
+      - debug plot (com paredes)
+      - runner: rosbag + métricas + gráficos
+      - watchdog: colisão geométrica (dist < R_os + R_ts) + para tudo
+
+    Importante:
+      - O runner encerra o roslaunch (required="true") quando:
+          * /scenario/reached_goal == True  OU
+          * /obstacle_avoidance/collision == True  OU
+          * timeout
+      - O watchdog publica /obstacle_avoidance/collision com base em distâncias (radii),
+        e também pausa física + zera cmd_vel quando colide ou chega no goal.
+  -->
+
+  <!-- ======= Cenário ======= -->
+  <arg name="scenario_pkg"    default="migbot_apf_controller"/>
+  <arg name="scenario_script" default="gazebo_scenario.py"/>
+
+  <!-- ======= Scenario controller (input -> output) ======= -->
+  <arg name="controller_pkg"  default="dynamic_obstacle_avoidance"/>
+  <arg name="controller_node" default="scenario_controller.py"/>
+  <arg name="controller_scenario" default="0"/>
+  <arg name="goal_x" default="70.0"/>
+  <arg name="goal_y" default="70.0"/>
+  <arg name="tolerance" default="6.0"/>
+
+  <!-- ======= Método (APF / LYU / VO / DWA...) ======= -->
+  <arg name="start_method" default="false"/>  <!-- default: instrumentação primeiro -->
+  <arg name="method_pkg" default="dynamic_obstacle_avoidance"/>
+  <arg name="method_node" default="apfm_obstacle_avoidance.py"/> <!-- ou apf_lyu_2018.py, vo_to_vw_ref.py, dwa_to_vw_ref.py -->
+  <arg name="method_start_delay_s" default="0.0"/>
+
+  <!-- ======= Conversor força -> (v_ref, w_ref) ======= -->
+  <arg name="start_force_to_vw" default="true"/>
+  <arg name="force_to_vw_pkg" default="migbot_apf_vw_ref"/>
+  <arg name="force_to_vw_node" default="apf_force_to_vw_ref.py"/>
+
+  <!-- ======= Controller de velocidade ======= -->
+  <arg name="start_velocity_controller" default="true"/>
+
+  <!-- ======= Allocation ======= -->
+  <arg name="start_allocation" default="true"/>
+  <arg name="allocation_pkg" default="migbot_allocation"/>
+  <arg name="allocation_node" default="migbot_allocation_node"/>
+
+  <!-- ======= Debug plot ======= -->
+  <arg name="open_debug_plot" default="true"/>
+  <arg name="debug_pkg" default="migbot_apf_controller"/>
+  <arg name="debug_node" default="debug_plot_v2_walls.py"/>
+  <arg name="debug_view_radius" default="45"/>
+  <arg name="debug_rate_hz" default="20"/>
+
+  <!-- ======= Runner (bag + métricas + gráficos) ======= -->
+  <arg name="runner_pkg" default="dynamic_obstacle_avoidance"/>
+  <arg name="runner_node" default="experiment_bag_and_metrics_runner.py"/>
+  <arg name="output_dir" default="/tmp/mestrado_runs"/>
+  <arg name="method_tag" default="METHOD"/>
+  <arg name="run_name" default="$(arg method_tag)_$(arg scenario_script)_$(anon run)"/>
+  <arg name="timeout_s" default="300"/>
+  <arg name="stop_on_collision" default="true"/>
+  <arg name="record_bag" default="true"/>
+  <arg name="bag_compress" default="lz4"/>
+
+  <!-- ======= Watchdog (colisão geométrica + stop/pause) ======= -->
+  <arg name="watchdog_pkg" default="migbot_apf_controller"/>
+  <arg name="watchdog_node" default="collision_watchdog.py"/>
+  <arg name="pause_gazebo_physics" default="true"/>
+  <arg name="ignore_walls_in_collision" default="false"/>
+
+<!-- 1) Cenário (publica /scenario/input_robot e /scenario/input_obstacles) -->
+<node pkg="$(arg scenario_pkg)"
+      type="$(arg scenario_script)"
+      name="gazebo_scenario"
+      output="screen">
+
+  <!-- qual cenário carregar (bate com rospy.get_param('~scenario', ...)) -->
+  <param name="scenario" value="sceinario_dissertacao_5"/>
+
+  <!-- estacionar obstáculos fora do cenário -->
+  <param name="park_unused_obstacles" value="true"/>
+  <param name="publish_only_active_obstacles" value="true"/>
+
+  <!-- “parking lot” (use valores grandes p/ não colidir) -->
+  <param name="park_base_x" value="-720.0"/>
+  <param name="park_base_y" value="-720.0"/>
+  <param name="park_spacing" value="50.0"/>
+  <param name="park_cols" value="5"/>
+  <param name="park_z" value="0.0"/>
+
+</node>
+
+
+  <!-- 2) Scenario controller (gera /scenario/output_* + /scenario/goal + /scenario/reached_goal) -->
+  <node pkg="$(arg controller_pkg)"
+        type="$(arg controller_node)"
+        name="scenario_controller"
+        output="screen">
+    <param name="scenario" value="$(arg controller_scenario)"/>
+    <param name="goal_x" value="$(arg goal_x)"/>
+    <param name="goal_y" value="$(arg goal_y)"/>
+    <param name="tolerance" value="$(arg tolerance)"/>
+  </node>
+
+  <!-- 3) Velocity feedback controller (launch) -->
+  <group if="$(arg start_velocity_controller)">
+    <include file="$(find migbot_velocity_feedback_controller)/launch/velocity_feedback_control.launch"/>
+  </group>
+
+  <!-- 4) Allocation -->
+  <group if="$(arg start_allocation)">
+    <node pkg="$(arg allocation_pkg)"
+          type="$(arg allocation_node)"
+          name="migbot_allocation"
+          output="screen"/>
+  </group>
+
+  <!-- 5) Debug plot -->
+  <group if="$(arg open_debug_plot)">
+    <node pkg="$(arg debug_pkg)"
+          type="$(arg debug_node)"
+          name="debug_plot"
+          output="screen">
+      <param name="view_radius" value="$(arg debug_view_radius)"/>
+      <param name="rate_hz" value="$(arg debug_rate_hz)"/>
+    </node>
+  </group>
+
+  <!-- 6) Watchdog colisão geométrica (publica /obstacle_avoidance/collision) -->
+  <node pkg="$(arg watchdog_pkg)"
+        type="$(arg watchdog_node)"
+        name="collision_watchdog"
+        output="screen">
+    <param name="pause_gazebo_physics" value="$(arg pause_gazebo_physics)"/>
+    <param name="ignore_walls" value="$(arg ignore_walls_in_collision)"/>
+  </node>
+
+  <!-- 7) Runner (bag + métricas + gráficos)  |  required=true para encerrar tudo no final -->
+  <node pkg="$(arg runner_pkg)"
+        type="$(arg runner_node)"
+        name="experiment_bag_and_metrics_runner"
+        output="screen"
+        required="true">
+
+    <param name="output_dir" value="$(arg output_dir)"/>
+    <param name="run_name" value="$(arg run_name)"/>
+
+    <param name="timeout_s" value="$(arg timeout_s)"/>
+    <param name="stop_on_collision" value="$(arg stop_on_collision)"/>
+
+    <param name="record_bag" value="$(arg record_bag)"/>
+    <param name="bag_compress" value="$(arg bag_compress)"/>
+  </node>
+
+  <!-- 8) Conversor força -> v_ref,w_ref -->
+<arg name="force_to_vw_params" default="$(find migbot_apf_vw_ref)/config/params.yaml"/>
+
+<group if="$(arg start_force_to_vw)">
+  <node pkg="migbot_apf_vw_ref" type="apf_force_to_vw_ref.py" name="apf_force_to_vw_ref" output="screen">
+    <rosparam command="load" file="$(arg force_to_vw_params)" />
+  </node>
+</group>
+
+  <!-- 9) Método (opcional). Default start_method:=false para você iniciar manualmente depois -->
+  <group if="$(arg start_method)">
+    <!-- se quiser delay, use:
+         roslaunch ... method_start_delay_s:=2.0
+    -->
+    <node pkg="$(arg method_pkg)"
+          type="$(arg method_node)"
+          name="avoidance_method"
+          output="screen"
+          launch-prefix="bash -lc 'sleep $(arg method_start_delay_s); exec '"/>
+  </group>
+
+</launch>

@@ -1,0 +1,53 @@
+<launch>
+  <arg name="scenario_pkg"    default="migbot_apf_controller"/>
+  <arg name="runner_pkg"      default="dynamic_obstacle_avoidance"/>
+  <arg name="scenario_script" default="gazebo_scenario_A1_single_static.py"/>
+
+  <arg name="output_dir" default="/tmp/mestrado_runs"/>
+  <arg name="method_tag" default="METHOD"/>
+  <arg name="run_name"   default="$(arg method_tag)_$(arg scenario_script)_$(anon run)"/>
+
+  <arg name="timeout_s" default="600"/>
+  <arg name="stop_on_collision" default="true"/>
+
+  <arg name="open_debug_plot" default="true"/>
+  <arg name="debug_view_radius" default="45"/>
+  <arg name="debug_rate_hz" default="20"/>
+
+  <!-- 0) scenario_controller (bypass input->output) -->
+  <node pkg="dynamic_obstacle_avoidance"
+        type="scenario_controller.py"
+        name="scenario_controller"
+        output="screen">
+    <param name="scenario" value="0"/>
+  </node>
+
+  <!-- 1) Cenário (migbot) -->
+  <node pkg="$(arg scenario_pkg)"
+        type="$(arg scenario_script)"
+        name="gazebo_scenario"
+        output="screen"/>
+
+  <!-- 2) Debug plot (migbot) -->
+  <group if="$(arg open_debug_plot)">
+    <node pkg="$(arg scenario_pkg)"
+          type="debug_plot_v2_walls.py"
+          name="debug_plot_v2_walls"
+          output="screen">
+      <param name="view_radius" value="$(arg debug_view_radius)"/>
+      <param name="rate_hz" value="$(arg debug_rate_hz)"/>
+    </node>
+  </group>
+
+  <!-- 3) Runner (dynamic) -->
+  <node pkg="$(arg runner_pkg)"
+        type="experiment_bag_and_metrics_runner.py"
+        name="experiment_bag_and_metrics_runner"
+        output="screen"
+        required="true">
+    <param name="output_dir" value="$(arg output_dir)"/>
+    <param name="run_name" value="$(arg run_name)"/>
+    <param name="timeout_s" value="$(arg timeout_s)"/>
+    <param name="stop_on_collision" value="$(arg stop_on_collision)"/>
+  </node>
+</launch>
